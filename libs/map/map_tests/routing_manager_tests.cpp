@@ -1049,4 +1049,68 @@ UNIT_TEST(RoutingManager_RebuildClearsUnavailableAlternatives)
     guiThread->RunNext();
   TEST(session.SwapActiveAlternative(1), ("Fresh alternatives must become selectable."));
 }
+
+// RoutingManager::SaveRoute() must keep the titles of the intermediate stops even though their
+// subtitles are empty: the subtitle guard exists only for the from/to track-name derivation,
+// where it filters the placeholder titles of unnamed tapped spots. Stops restored from kml
+// carry a title and no subtitle and must round-trip.
+UNIT_TEST(RoutingManager_SaveRouteKeepsStopNames)
+{
+  WithSavedRoute([](RoutingManager & routingManager, BookmarkManager & bmManager, TestGuiThread & guiThread)
+  {
+    auto const originalRouter = routingManager.GetLastUsedRouter();
+    SCOPE_GUARD(restoreRouter, [&] { routingManager.SetLastUsedRouter(originalRouter); });
+    // Also makes the category saving synchronous: no File-thread write outlives the scoped dir.
+    bmManager.EnableTestMode(true);
+    SCOPE_GUARD(restoreTestMode, [&] { bmManager.EnableTestMode(false); });
+
+    // The Ruler router builds a real route deterministically, with no map data at all.
+    routingManager.SetRouter(routing::RouterType::Ruler);
+    routingManager.Init(std::make_shared<routing::NumMwmIds>());
+
+    auto start = MakeRoutePoint(RouteMarkType::Start, 0, 0.0);
+    start.m_title = "Dropped pin";  // An unnamed tapped spot: a placeholder title, no subtitle.
+    routingManager.AddRoutePoint(std::move(start), false /* optimize */);
+
+    std::vector<kml::TrackStopData> const expectedStops = {{{0.0007, 0.0007}, "Calais"}, {{0.0004, 0.0004}, ""}};
+    for (size_t i = 0; i < expectedStops.size(); ++i)
+    {
+      auto stop = MakeRoutePoint(RouteMarkType::Intermediate, i, expectedStops[i].m_point.x);
+      stop.m_title = expectedStops[i].m_name;
+      stop.m_isMyPosition = i == 1;
+      if (stop.m_isMyPosition)
+        stop.m_position = {0.0003, 0.0003};
+      routingManager.AddRoutePoint(std::move(stop), false /* optimize */);
+    }
+    bmManager.MyPositionMark().SetUserPosition(expectedStops.back().m_point, true /* hasPosition */);
+
+    auto finish = MakeRoutePoint(RouteMarkType::Finish, 0, 0.001);
+    finish.m_title = "Paris";
+    finish.m_subTitle = "City";
+    routingManager.AddRoutePoint(std::move(finish), false /* optimize */);
+
+    bool built = false;
+    routingManager.SetRouteBuildingListener([&](routing::RouterResultCode code, storage::CountriesSet const &)
+    {
+      TEST_EQUAL(code, routing::RouterResultCode::NoError, ());
+      built = true;
+    });
+    routingManager.BuildRoute();
+    while (!built)
+      guiThread.RunNext();
+    TEST(routingManager.IsRouteValid(), ());
+
+    // Save the fix used by the build, even if the user moved again before saving.
+    bmManager.MyPositionMark().SetUserPosition({0.0008, 0.0008}, true /* hasPosition */);
+
+    auto const trackId = routingManager.SaveRoute();
+    TEST_NOT_EQUAL(trackId, kml::kInvalidTrackId, ());
+    auto const * track = bmManager.GetTrack(trackId);
+    TEST(track != nullptr, ());
+    // The from/to names keep the subtitle guard: the start placeholder is filtered out.
+    TEST_EQUAL(track->GetName(), "Paris", ());
+    TEST_EQUAL(track->GetData().m_routerType, "ruler", ());
+    TEST_EQUAL(track->GetData().m_stops, expectedStops, ());
+  });
+}
 }  // namespace routing_manager_tests

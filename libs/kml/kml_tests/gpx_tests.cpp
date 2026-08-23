@@ -7,6 +7,8 @@
 
 #include "geometry/mercator.hpp"
 
+#include "base/logging.hpp"
+
 #include "coding/file_reader.hpp"
 
 #include "platform/platform.hpp"
@@ -363,6 +365,89 @@ UNIT_TEST(Route)
              ());
   TEST_EQUAL(line[1], geometry::PointWithAltitude(mercator::FromLatLon(48.209503040543545, 16.381065845489506), 187),
              ());
+}
+
+// Named intermediate route points become the track's stops; unnamed ones and the route's first
+// and last rtept (the geometry's endpoints) only contribute to the geometry. The filter is
+// positional, so on a loop route a middle stop coinciding with the start survives.
+UNIT_TEST(Gpx_Route_Stops_Import)
+{
+  std::string_view constexpr input = R"(<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1">
+<rte>
+  <name>Route with stops</name>
+  <rtept lat="1" lon="1"><name>Start point</name></rtept>
+  <rtept lat="2" lon="2"></rtept>
+  <rtept lat="3" lon="3"><name>Coffee break</name></rtept>
+  <rtept lat="1" lon="1"><name>Back at the start</name></rtept>
+  <rtept lat="4" lon="4"><name>Finish point</name></rtept>
+</rte>
+</gpx>
+)";
+
+  kml::FileData const dataFromText = LoadGpxFromString(input);
+  TEST_EQUAL(dataFromText.m_tracksData.size(), 1, ());
+  auto const & track = dataFromText.m_tracksData[0];
+  TEST_EQUAL(track.m_geometry.m_lines[0].size(), 5, ());
+  std::vector<kml::TrackStopData> const expectedStops = {{mercator::FromLatLon(3, 3), "Coffee break"},
+                                                         {mercator::FromLatLon(1, 1), "Back at the start"}};
+  TEST_EQUAL(track.m_stops, expectedStops, ());
+}
+
+// A stop needs parseable rtept coordinates and a real <rte> context: broken coordinates are
+// skipped, and an orphan named rtept outside <rte> must not leak a stop into the following track.
+UNIT_TEST(Gpx_Route_Stops_Invalid)
+{
+  std::string_view constexpr input = R"(<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1">
+<rte>
+  <rtept lat="1" lon="1"></rtept>
+  <rtept lat="48,85" lon="2"><name>Broken coords</name></rtept>
+  <rtept lat="91" lon="2"><name>Invalid latitude</name></rtept>
+  <rtept lat="3" lon="181"><name>Invalid longitude</name></rtept>
+  <rtept lon="3"><name>Missing latitude</name></rtept>
+  <rtept lat="3"><name>Missing longitude</name></rtept>
+  <rtept lat="3" lon="3"><name>Good stop</name></rtept>
+  <rtept lat="4" lon="4"></rtept>
+</rte>
+<rtept lat="5" lon="5"><name>Orphan</name></rtept>
+<trk>
+  <trkseg>
+    <trkpt lat="6" lon="6"></trkpt>
+    <trkpt lat="7" lon="7"></trkpt>
+  </trkseg>
+</trk>
+</gpx>
+)";
+
+  // Malformed coordinates are reported via LOG(LERROR, ...), which aborts in test binaries.
+  base::ScopedLogAbortLevelChanger const logAbortGuard;
+  kml::FileData const dataFromText = LoadGpxFromString(input);
+  TEST_EQUAL(dataFromText.m_tracksData.size(), 2, ());
+  TEST_EQUAL(dataFromText.m_tracksData[0].m_stops,
+             (std::vector<kml::TrackStopData>{{mercator::FromLatLon(3, 3), "Good stop"}}), ());
+  TEST(dataFromText.m_tracksData[1].m_stops.empty(), ());
+}
+
+// Track stops are exported as plain waypoints before the <trk> element (GPX schema order).
+UNIT_TEST(Gpx_Track_Stops_Export)
+{
+  kml::FileData data;
+  kml::TrackData trackData;
+  trackData.m_name[kml::kDefaultLang] = "Track";
+  trackData.m_geometry.AddLine({{mercator::FromLatLon(1, 1), 1}, {mercator::FromLatLon(3, 3), 2}});
+  trackData.m_geometry.AddTimestamps({});
+  trackData.m_stops = {{mercator::FromLatLon(2, 2), "Stop A"}};
+  data.m_tracksData.push_back(std::move(trackData));
+
+  auto const exported = Serialize(data);
+  auto const wptPos = exported.find("<wpt");
+  auto const trkPos = exported.find("<trk>");
+  TEST(wptPos != std::string::npos, (exported));
+  TEST(trkPos != std::string::npos, (exported));
+  TEST_LESS(wptPos, trkPos, (exported));
+
+  TEST(exported.find("<name>Stop A</name>", wptPos) < trkPos, (exported));
 }
 
 UNIT_TEST(Color)

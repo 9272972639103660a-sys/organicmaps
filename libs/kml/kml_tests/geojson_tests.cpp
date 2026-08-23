@@ -701,6 +701,27 @@ UNIT_TEST(GeoJson_Writer_UMap_Invalid_Json)
   TEST_EQUAL(jsonString, expected_geojson, ());
 }
 
+// Track stops export as plain Point features readable by other apps.
+UNIT_TEST(GeoJson_Writer_Track_Stops)
+{
+  kml::FileData fileData;
+  kml::TrackData track;
+  kml::SetDefaultStr(track.m_name, "Track");
+  track.m_layers = {{5.0, {kml::PredefinedColor::Red, 0}}};
+  track.m_geometry.AddLine({{mercator::FromLatLon(47.0, 8.0), 1}, {mercator::FromLatLon(47.2, 8.2), 2}});
+  track.m_geometry.AddTimestamps({});
+  track.m_stops = {{mercator::FromLatLon(47.1, 8.1), "Coffee break"}};
+  fileData.m_tracksData.emplace_back(std::move(track));
+
+  auto const json = SaveToGeoJsonString(fileData, true);
+  kml::geojson::GeoJsonData exported;
+  TEST(!glz::read_json(exported, json), (json));
+  TEST_EQUAL(exported.features.size(), 2, ());
+  auto const & stop = exported.features.front();
+  TEST(std::holds_alternative<kml::geojson::GeoJsonGeometryPoint>(stop.geometry), (stop));
+  TEST_EQUAL(stop.properties.at("name").get_string(), "Coffee break", ());
+}
+
 UNIT_TEST(GeoJson_Parse_FeatureCollection_NonStringProperties)
 {
   // FeatureCollection-level "properties" may contain non-string values

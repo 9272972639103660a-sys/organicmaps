@@ -90,11 +90,22 @@ private:
 
   double m_lat;
   double m_lon;
+  // A stop requires both coordinates on its own rtept; a missing attribute must not reuse a
+  // coordinate from another point. Geometry parsing is independent of these flags.
+  bool m_latParsed = false;
+  bool m_lonParsed = false;
   geometry::Altitude m_altitude;
   MultiGeometry::TimeInt m_timestamp;
 
   MultiGeometry::LineT m_line;
   MultiGeometry::TimeT m_timestamps;
+  // Pending <rtept><name>; consumed when the rtept closes (see Pop).
+  std::string m_rteptName;
+  // Named route points with their ordinal inside the current <rte>. The first/last rtept are the
+  // route's start/finish (the geometry's endpoints), so only intermediate ones become stops --
+  // filtered positionally at track finalize to keep a loop's coincident middle stop.
+  std::vector<std::pair<size_t, TrackStopData>> m_stopCandidates;
+  size_t m_rteptOrdinal = 0;
   void ParseName(std::string const & value, std::string const & prevTag);
   void ParseDescription(std::string const & value, std::string const & prevTag);
   void ParseAltitude(std::string const & value);

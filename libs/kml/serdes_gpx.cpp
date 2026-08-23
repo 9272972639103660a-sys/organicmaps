@@ -64,6 +64,9 @@ void GpxParser::ResetPoint()
   m_lon = 0.;
   m_altitude = geometry::kInvalidAltitude;
   m_timestamp = base::INVALID_TIME_STAMP;
+  m_rteptName.clear();
+  m_stopCandidates.clear();
+  m_rteptOrdinal = 0;
 }
 
 bool GpxParser::MakeValid()
@@ -93,7 +96,11 @@ bool GpxParser::Push(std::string tag)
   if (tag == gpx::kWpt)
     m_geometryType = GEOMETRY_TYPE_POINT;
   else if (tag == gpx::kTrkPt || tag == gpx::kRtePt)
+  {
     m_geometryType = GEOMETRY_TYPE_LINE;
+    m_latParsed = false;
+    m_lonParsed = false;
+  }
 
   m_tags.emplace_back(std::move(tag));
 
@@ -114,10 +121,18 @@ void GpxParser::AddAttr(std::string_view attr, char const * value)
     // Yes, https://touren.bodenmais.de/bodenmais/ , we're thinking of you.
     if (*value == '+')
       ++value;
-    if (attr == "lat" && !strings::to_double(value, m_lat))
-      LOG(LERROR, ("Bad gpx latitude:", value));
-    else if (attr == "lon" && !strings::to_double(value, m_lon))
-      LOG(LERROR, ("Bad gpx longitude:", value));
+    if (attr == "lat")
+    {
+      m_latParsed = strings::to_double(value, m_lat);
+      if (!m_latParsed)
+        LOG(LERROR, ("Bad gpx latitude:", value));
+    }
+    else if (attr == "lon")
+    {
+      m_lonParsed = strings::to_double(value, m_lon);
+      if (!m_lonParsed)
+        LOG(LERROR, ("Bad gpx longitude:", value));
+    }
   }
 }
 
@@ -248,8 +263,19 @@ void GpxParser::Pop(std::string_view tag)
       m_timestamps.emplace_back(m_timestamp);
     }
 
+    if (tag == gpx::kRtePt && GetTagFromEnd(1) == gpx::kRte)
+    {
+      // A named route point nested in <rte> becomes a stop candidate (ParseName fills m_rteptName
+      // for rtept only). Skip it unless both coordinates were parsed successfully (see AddAttr).
+      if (!m_rteptName.empty() && m_latParsed && m_lonParsed && mercator::ValidLat(m_lat) && mercator::ValidLon(m_lon))
+        m_stopCandidates.push_back({m_rteptOrdinal, {p, std::move(m_rteptName)}});
+      // Count every rtept, including consecutive duplicates omitted from the geometry above.
+      ++m_rteptOrdinal;
+    }
+
     m_altitude = geometry::kInvalidAltitude;
     m_timestamp = base::INVALID_TIME_STAMP;
+    m_rteptName.clear();
   }
   else if (tag == gpx::kTrkSeg || tag == gpx::kRte)
   {
@@ -325,6 +351,13 @@ void GpxParser::Pop(std::string_view tag)
         data.m_layers.push_back(layer);
         data.m_geometry = std::move(m_geometry);
 
+        // Only intermediate route points become stops: the first and the last rtept are the
+        // route's start/finish -- already the geometry's endpoints. Filter by position, not by
+        // coordinates, so a loop route's middle stop coinciding with the start survives.
+        for (auto & [ordinal, stop] : m_stopCandidates)
+          if (ordinal != 0 && ordinal + 1 != m_rteptOrdinal)
+            data.m_stops.push_back(std::move(stop));
+
         m_data.m_tracksData.push_back(std::move(data));
       }
     }
@@ -392,6 +425,11 @@ void GpxParser::ParseName(std::string const & value, std::string const & prevTag
   if (prevTag == kWpt)
   {
     m_name = value;
+  }
+  else if (prevTag == kRtePt)
+  {
+    // A named route point becomes a stop of the track (see Pop).
+    m_rteptName = value;
   }
   else if (prevTag == kTrk || prevTag == kRte)
   {
@@ -506,6 +544,16 @@ void SaveBookmarkData(Writer & writer, BookmarkData const & bookmarkData)
   writer << "</wpt>\n";
 }
 
+// Track stops are exported as plain waypoints readable by other apps (GPX has no notion of
+// per-track stops), so reimporting yields bookmarks, not stops. KML keeps full fidelity.
+void SaveTrackStopData(Writer & writer, TrackStopData const & stop)
+{
+  BookmarkData bookmarkData;
+  bookmarkData.m_point = stop.m_point;
+  SetDefaultStr(bookmarkData.m_name, stop.m_name);
+  SaveBookmarkData(writer, bookmarkData);
+}
+
 // True if any line in the track carries real elevation (see LineHasAltitude). Scanning every
 // point (not just the first) keeps GPX export consistent with the elevation chart
 // (Track::HasAltitudes) for mixed tracks whose first point lacks altitude.
@@ -592,6 +640,10 @@ void GpxWriter::Write(FileData const & fileData)
   SaveCategoryData(m_writer, fileData.m_categoryData);
   for (auto const & bookmarkData : fileData.m_bookmarksData)
     SaveBookmarkData(m_writer, bookmarkData);
+  // The GPX schema requires wpt* elements before trk*, so track stops are written here.
+  for (auto const & trackData : fileData.m_tracksData)
+    for (auto const & stop : trackData.m_stops)
+      SaveTrackStopData(m_writer, stop);
   for (auto const & trackData : fileData.m_tracksData)
     SaveTrackData(m_writer, trackData);
   m_writer << kGpxFooter;

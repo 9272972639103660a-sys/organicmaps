@@ -17,7 +17,7 @@ std::string ToString(RouterType type)
   return "Error";
 }
 
-RouterType FromString(std::string const & str)
+std::optional<RouterType> FromStringChecked(std::string_view str)
 {
   if (str == "vehicle")
     return RouterType::Vehicle;
@@ -29,9 +29,7 @@ RouterType FromString(std::string const & str)
     return RouterType::Transit;
   if (str == "ruler")
     return RouterType::Ruler;
-
-  ASSERT(false, ("Incorrect routing string:", str));
-  return RouterType::Vehicle;
+  return std::nullopt;
 }
 
 std::string DebugPrint(RouterType type)

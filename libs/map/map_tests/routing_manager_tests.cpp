@@ -230,6 +230,37 @@ double GetRouteLengthMeters(RoutingManager const & manager)
 }
 }  // namespace
 
+UNIT_TEST(RoutingManager_SaveRouteRequiresRouteMarks)
+{
+  WithSavedRoute([](RoutingManager & manager, BookmarkManager &, TestGuiThread & guiThread)
+  {
+    auto const originalRouter = manager.GetLastUsedRouter();
+    SCOPE_GUARD(restoreRouter, [&] { manager.SetLastUsedRouter(originalRouter); });
+    manager.SetRouter(routing::RouterType::Ruler);
+    manager.Init(std::make_shared<routing::NumMwmIds>());
+    manager.AddRoutePoint(MakeRoutePoint(RouteMarkType::Start, 0, 1.0), false /* optimize */);
+    manager.AddRoutePoint(MakeRoutePoint(RouteMarkType::Finish, 0, 2.0), false /* optimize */);
+
+    bool built = false;
+    manager.SetRouteBuildingListener([&](routing::RouterResultCode code, storage::CountriesSet const &)
+    {
+      TEST_EQUAL(code, routing::RouterResultCode::NoError, ());
+      built = true;
+    });
+    manager.BuildRoute();
+    while (!built)
+      guiThread.RunNext();
+    TEST(manager.IsRouteValid(), ());
+
+    manager.RemoveRoutePoints();
+    TEST(manager.IsRouteValid(), ("The built route must outlive its editable marks."));
+    TEST_EQUAL(manager.SaveRoute(), kml::kInvalidTrackId, ());
+    manager.AddRoutePoint(MakeRoutePoint(RouteMarkType::Start, 0, 1.0), false /* optimize */);
+    TEST(manager.IsRouteValid(), ());
+    TEST_EQUAL(manager.SaveRoute(), kml::kInvalidTrackId, ());
+  });
+}
+
 UNIT_TEST(RoutingManager_ReverseRoutePointsRequiresBothEndpoints)
 {
   Framework framework(FrameworkParams(false /* m_enableDiffs */));

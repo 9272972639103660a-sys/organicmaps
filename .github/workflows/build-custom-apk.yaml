@@ -1,0 +1,32 @@
+name: Build Custom APK
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ARM64 WebRelease APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install build tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build
+
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Parallel submodules checkout
+        run: git submodule update --depth 1 --init --recursive --jobs=$(($(nproc) * 20))
+
+      - name: Build WebRelease APK
+        working-directory: android
+        run: ./gradlew -Parm64 assembleWebRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: OrganicMaps-Custom-APK
+          path: android/app/build/outputs/apk/**/OrganicMaps-*.apk
+          if-no-files-found: error

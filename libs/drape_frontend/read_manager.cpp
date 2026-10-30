@@ -29,7 +29,14 @@ struct LessCoverageCell
 
 uint8_t GetReadingThreadsCount()
 {
-  return Platform::CpuCores() >= 6 ? 3 : 2;
+  auto const cores = Platform::CpuCores();
+  if (cores >= 8)
+    return 5;
+  if (cores >= 6)
+    return 4;
+  if (cores >= 4)
+    return 3;
+  return 2;
 }
 
 bool ReadManager::LessByTileInfo::operator()(std::shared_ptr<TileInfo> const & l,
@@ -51,7 +58,7 @@ ReadManager::ReadManager(ref_ptr<ThreadsCommutator> commutator, MapDataProvider 
   , m_mapLangIndex(StringUtf8Multilang::kDefaultCode)
   , m_backgroundMode(backgroundMode)
   , m_areaOpacity(areaOpacity)
-  , m_tasksPool(64, ReadMWMTaskFactory(m_model))
+  , m_tasksPool(128, ReadMWMTaskFactory(m_model))
   , m_counter(0)
   , m_generationCounter(0)
   , m_userMarksGenerationCounter(0)

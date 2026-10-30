@@ -99,13 +99,17 @@ endif()
 # (Xcode, Visual Studio, Ninja Multi-Config) where CMAKE_BUILD_TYPE is empty
 # at configure time and the active config is only known per-build.
 add_compile_definitions(
-  $<$<CONFIG:Debug>:DEBUG>
-  $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:RELEASE>
+  $<$<BOOL:${PLATFORM_ANDROID}>:RELEASE>
+  $<$<BOOL:${PLATFORM_ANDROID}>:NDEBUG>
+  $<$<AND:$<CONFIG:Debug>,$<NOT:$<BOOL:${PLATFORM_ANDROID}>>>:DEBUG>
+  $<$<AND:$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>,$<NOT:$<BOOL:${PLATFORM_ANDROID}>>>:RELEASE>
 )
 if (NOT MSVC)
   add_compile_options(
-    $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
-    $<$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>:-O3>
+    $<$<BOOL:${PLATFORM_ANDROID}>:-O3>
+    $<$<BOOL:${PLATFORM_ANDROID}>:-fomit-frame-pointer>
+    $<$<AND:$<CONFIG:Debug>,$<NOT:$<BOOL:${PLATFORM_ANDROID}>>>:-fno-omit-frame-pointer>
+    $<$<AND:$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>,$<NOT:$<BOOL:${PLATFORM_ANDROID}>>>:-O3>
   )
 endif()
 
@@ -134,7 +138,7 @@ if (PLATFORM_LINUX OR PLATFORM_ANDROID)
   endif()
 endif()
 
-set(OMIM_OPTIMIZED_CONFIG "$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>")
+set(OMIM_OPTIMIZED_CONFIG "$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>,$<BOOL:${PLATFORM_ANDROID}>>")
 if (MSVC)
   add_compile_options("$<$<AND:$<COMPILE_LANGUAGE:C,CXX>,${OMIM_OPTIMIZED_CONFIG}>:/Gy;/Gw>")
 elseif (APPLE)

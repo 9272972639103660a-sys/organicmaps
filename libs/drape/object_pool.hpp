@@ -8,7 +8,9 @@
 #include <string>
 #include <vector>
 
+#ifdef DEBUG_OBJECT_POOL
 #define LOG_OBJECT_POOL
+#endif
 
 namespace dp
 {

@@ -137,7 +137,7 @@ android {
       }
 
       // Enable jni debug build
-      jniDebuggable true
+      jniDebuggable false
     }
 
     release {

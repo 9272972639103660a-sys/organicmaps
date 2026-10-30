@@ -513,21 +513,21 @@ RouterResultCode IndexRouter::CalculateRoute(Checkpoints const & checkpoints, m2
           !delegate.IsCancelled() && mercator::DistanceOnEarth(startPoint, finalPoint) <= altMaxDistanceM)
       {
         std::string strStdCount = "2";
-        settings::Get("pref_std_routes_count", strStdCount);
+        (void)settings::Get("pref_std_routes_count", strStdCount);
         int stdCount = 2;
         strings::to_int(strStdCount, stdCount);
         if (stdCount < 0) stdCount = 0;
         if (stdCount > 5) stdCount = 5;
 
         std::string strDeepCount = "2";
-        settings::Get("pref_deep_routes_count", strDeepCount);
+        (void)settings::Get("pref_deep_routes_count", strDeepCount);
         int deepCount = 2;
         strings::to_int(strDeepCount, deepCount);
         if (deepCount < 0) deepCount = 0;
         if (deepCount > 5) deepCount = 5;
 
         std::string strMaxEta = "1.6";
-        settings::Get("pref_deep_routes_max_eta", strMaxEta);
+        (void)settings::Get("pref_deep_routes_max_eta", strMaxEta);
         double maxEtaRatio = 1.6;
         strings::to_double(strMaxEta, maxEtaRatio);
         if (maxEtaRatio < 1.1) maxEtaRatio = 1.6;
@@ -702,8 +702,7 @@ RouterResultCode IndexRouter::CalculateRoute(Checkpoints const & checkpoints, m2
   }
   catch (RootException const & e)
   {
-    LOG(LERROR, ("Can't find path from", mercator::ToLatLon(startPoint), "to", mercator::ToLatLon(finalPoint), ":
- ",
+    LOG(LERROR, ("Can't find path from", mercator::ToLatLon(startPoint), "to", mercator::ToLatLon(finalPoint), ": ",
                  e.what()));
     return RouterResultCode::InternalError;
   }

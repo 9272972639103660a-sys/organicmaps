@@ -148,7 +148,7 @@ bool IsTransitColor(ColorConstant const & constant)
 
 dp::Color GetColorConstant(ColorConstant const & constant)
 {
-  if (IsTransitColor(constant))
+  if (constant.starts_with('#') || IsTransitColor(constant))
     return TransitColors().GetColor(constant);
   uint32_t const color = drule::GetCurrentRules().GetColor(constant);
   return ToDrapeColor(color);

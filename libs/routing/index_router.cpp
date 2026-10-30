@@ -1,5 +1,7 @@
 #include "routing/index_router.hpp"
 
+#include <unordered_set>
+
 #include "routing/base/astar_progress.hpp"
 
 #include "routing/car_directions.hpp"
@@ -518,6 +520,7 @@ RouterResultCode IndexRouter::CalculateRoute(Checkpoints const & checkpoints, m2
         {
           m_estimator->SetStrategy(EdgeEstimator::Strategy::Normal);
           m_estimator->SetTransitAltFactors(1.0, 0.0);
+          m_estimator->ClearPenalizedSegments();
           // Save the alternative route's adjust-cache.
           m_lastAltRoute = std::move(m_lastRoute);
           m_lastAltFakeEdges = std::move(m_lastFakeEdges);
@@ -538,6 +541,46 @@ RouterResultCode IndexRouter::CalculateRoute(Checkpoints const & checkpoints, m2
           m_estimator->SetStrategy(OtherStrategy(m_activeStrategy), !m_guides.IsAttached() /* tightHeuristicAllowed */);
         }
         altCode = DoCalculateRoute(checkpoints, startDirection, delegate, altRoute);
+
+        bool hasAltDiff = false;
+        if ((altCode == RouterResultCode::NoError || altCode == RouterResultCode::HasWarnings) && altRoute.IsValid() &&
+            IsAlternativeEtaAcceptable(m_vehicleType, route.GetTotalTimeSec(), altRoute.GetTotalTimeSec()))
+        {
+          auto const diff = m_vehicleType == VehicleType::Transit
+                              ? altRoute.FindMaxDiffMidpointByGeometry(route.GetRouteSegments())
+                              : altRoute.FindMaxDiffMidpoint(route.GetRouteSegments());
+          if (diff)
+            hasAltDiff = true;
+        }
+
+        if (!hasAltDiff && !delegate.IsCancelled() && m_vehicleType != VehicleType::Transit)
+        {
+          m_estimator->SetStrategy(EdgeEstimator::Strategy::Normal);
+          std::unordered_set<Segment> penalized;
+          auto const & segs = route.GetRouteSegments();
+          size_t const startIdx = segs.size() > 10 ? segs.size() / 10 : (segs.size() > 2 ? 1 : 0);
+          size_t const endIdx = segs.size() > 10 ? segs.size() * 9 / 10 : (segs.size() > 2 ? segs.size() - 1 : segs.size());
+          for (size_t s = startIdx; s < endIdx; ++s)
+            penalized.insert(segs[s].GetSegment());
+
+          if (!penalized.empty())
+          {
+            m_estimator->SetPenalizedSegments(std::move(penalized), 3.0);
+            Route penaltyAltRoute;
+            RouterResultCode penaltyCode = DoCalculateRoute(checkpoints, startDirection, delegate, penaltyAltRoute);
+            if ((penaltyCode == RouterResultCode::NoError || penaltyCode == RouterResultCode::HasWarnings) &&
+                penaltyAltRoute.IsValid() &&
+                penaltyAltRoute.GetTotalTimeSec() <= 1.8 * route.GetTotalTimeSec())
+            {
+              auto diff = penaltyAltRoute.FindMaxDiffMidpoint(route.GetRouteSegments());
+              if (diff)
+              {
+                altRoute = std::move(penaltyAltRoute);
+                altCode = penaltyCode;
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -560,8 +603,6 @@ RouterResultCode IndexRouter::CalculateRoute(Checkpoints const & checkpoints, m2
       diffMidpoint = m_vehicleType == VehicleType::Transit
                        ? altRoute.FindMaxDiffMidpointByGeometry(route.GetRouteSegments())
                        : altRoute.FindMaxDiffMidpoint(route.GetRouteSegments());
-      if (!diffMidpoint && altRoute.IsValid())
-        diffMidpoint = altRoute.GetMidpoint();
     }
 
     result.MakeFrom(GetName(), std::move(route));
@@ -574,8 +615,6 @@ RouterResultCode IndexRouter::CalculateRoute(Checkpoints const & checkpoints, m2
       diffMidpoint = m_vehicleType == VehicleType::Transit
                        ? active.FindMaxDiffMidpointByGeometry(altRoute.GetRouteSegments())
                        : active.FindMaxDiffMidpoint(altRoute.GetRouteSegments());
-      if (!diffMidpoint && active.IsValid())
-        diffMidpoint = active.GetMidpoint();
       if (diffMidpoint)
         active.SetDiffMidpoint(*diffMidpoint);
 

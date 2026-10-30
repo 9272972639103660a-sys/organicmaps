@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <limits>
 #include <map>
 #include <string>
@@ -304,21 +305,16 @@ static glz::generic const * GetCoordTimesValue(kml::geojson::GenericJsonMap cons
   return nullptr;
 }
 
+struct GeoJsonRoot
+{
+  std::string type = "FeatureCollection";
+  std::vector<glz::raw_json_view> features;
+  std::optional<geojson::GenericJsonMap> properties;
+};
+
 bool GeoJsonReader::Parse(std::string_view jsonContent)
 {
   using namespace geojson;
-
-  GeoJsonData geoJsonData;
-
-  glz::opts constexpr opts{.comments = true, .error_on_unknown_keys = false, .error_on_missing_keys = false};
-  auto const ec = glz::read<opts>(geoJsonData, jsonContent);
-
-  if (ec)
-  {
-    std::string err = glz::format_error(ec, jsonContent);
-    LOG(LWARNING, ("Error parsing GeoJson:", err));
-    return false;
-  }
 
   auto getStringFromJsonMap = [](GenericJsonMap const & propsJson,
                                  std::string const & fieldName) -> std::optional<std::string>
@@ -328,15 +324,15 @@ bool GeoJsonReader::Parse(std::string_view jsonContent)
     return {};
   };
 
-  // Copy bookmarks from parsed geoJsonData into m_fileData.
-  for (auto const & feature : geoJsonData.features)
+  FileData parsed;
+  auto importFeature = [&](GeoJsonFeature const & feature)
   {
     if (auto const * point = std::get_if<GeoJsonGeometryPoint>(&feature.geometry))
     {
       if (point->coordinates.size() < 2)
       {
         LOG(LWARNING, ("Skipping GeoJson point with incomplete position", point->coordinates));
-        continue;
+        return;
       }
       double longitude = point->coordinates[0];
       double latitude = point->coordinates[1];
@@ -388,7 +384,7 @@ bool GeoJsonReader::Parse(std::string_view jsonContent)
       if (!IsValidLatLon(latitude, longitude))
       {
         LOG(LWARNING, ("Skipping GeoJson point with invalid coordinates", latitude, longitude));
-        continue;
+        return;
       }
 
       // Parse description
@@ -431,17 +427,12 @@ bool GeoJsonReader::Parse(std::string_view jsonContent)
       if (!bookmark_name.empty())
         SetDefaultStr(bookmark.m_name, bookmark_name);
       bookmark.m_point = mercator::FromLatLon(latitude, longitude);
-      m_fileData.m_bookmarksData.push_back(bookmark);
+      parsed.m_bookmarksData.push_back(bookmark);
     }
     else if (auto const * unknownGeometry = std::get_if<GeoJsonGeometryUnknown>(&feature.geometry))
     {
       LOG(LWARNING, ("GeoJson contains unsupported geometry type:", unknownGeometry->type));
     }
-  }
-
-  // Copy tracks from parsed geoJsonData into m_fileData.
-  for (auto const & feature : geoJsonData.features)
-  {
     auto const * lineGeometry = std::get_if<GeoJsonGeometryLine>(&feature.geometry);
     auto const * multilineGeometry = std::get_if<GeoJsonGeometryMultiLine>(&feature.geometry);
 
@@ -520,12 +511,41 @@ bool GeoJsonReader::Parse(std::string_view jsonContent)
       }
 
       if (track.m_geometry.IsValid())
-        m_fileData.m_tracksData.push_back(std::move(track));
+        parsed.m_tracksData.push_back(std::move(track));
       else
         LOG(LWARNING, ("GeoJson track without geometry:", GetDefaultStr(track.m_name)));
     }
+  };
+
+  glz::opts constexpr opts{.comments = true, .error_on_unknown_keys = false, .error_on_missing_keys = false};
+  GeoJsonRoot root;
+  if (auto const error = glz::read<opts>(root, jsonContent))
+  {
+    LOG(LWARNING, ("Error parsing GeoJson:", glz::format_error(error, jsonContent)));
+    return false;
+  }
+  for (auto const & json : root.features)
+  {
+    GeoJsonFeature feature;
+    if (auto const error = glz::read<opts>(feature, json.str))
+    {
+      LOG(LWARNING, ("Error parsing GeoJson feature:", glz::format_error(error, json.str)));
+      return false;
+    }
+    importFeature(feature);
   }
 
+  // Decode each feature separately, but commit only after the complete collection is valid.
+  auto const append = [](auto & destination, auto & source)
+  {
+    if (destination.empty())
+      destination = std::move(source);
+    else
+      destination.insert(destination.end(), std::make_move_iterator(source.begin()),
+                         std::make_move_iterator(source.end()));
+  };
+  append(m_fileData.m_bookmarksData, parsed.m_bookmarksData);
+  append(m_fileData.m_tracksData, parsed.m_tracksData);
   return true;
 }
 

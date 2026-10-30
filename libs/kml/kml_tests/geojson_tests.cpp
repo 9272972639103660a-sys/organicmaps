@@ -44,6 +44,28 @@ static std::string SaveToGeoJsonString(kml::FileData const & fileData, bool mini
       ());
 }
 
+UNIT_TEST(GeoJson_Parse_CommitsOnlyCompleteCollections)
+{
+  kml::FileData data;
+  kml::SetDefaultStr(data.m_bookmarksData.emplace_back().m_name, "Existing");
+  std::string const invalid = R"({"type":"FeatureCollection","features":[
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[1,1]},"properties":{"name":"New"}},
+    {"type":"Feature","geometry":{"type":"LineString","coordinates":[[1,"invalid"],[2,2]]}}
+  ]})";
+  TEST_ANY_THROW(kml::GeoJsonReader(data).Deserialize(invalid), ());
+  TEST_EQUAL(data.m_bookmarksData.size(), 1, ());
+  TEST_EQUAL(kml::GetDefaultStr(data.m_bookmarksData.front().m_name), "Existing", ());
+  TEST(data.m_tracksData.empty(), ());
+
+  kml::GeoJsonReader(data).Deserialize(R"({"type":"FeatureCollection","features":[
+    {"type":"Feature","geometry":{"type":"Point","coordinates":[1,1]},"properties":{"name":"New"}},
+    {"type":"Feature","geometry":{"type":"LineString","coordinates":[[1,1],[2,2]]}}
+  ]})");
+  TEST_EQUAL(data.m_bookmarksData.size(), 2, ());
+  TEST_EQUAL(kml::GetDefaultStr(data.m_bookmarksData.back().m_name), "New", ());
+  TEST_EQUAL(data.m_tracksData.size(), 1, ());
+}
+
 UNIT_TEST(GeoJson_Parse_Basic)
 {
   std::string_view constexpr input = R"({

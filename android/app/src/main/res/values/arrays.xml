@@ -1,25 +1,165 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <integer-array name="route_stop_icons">
-    <item>@drawable/route_point_01</item>
-    <item>@drawable/route_point_02</item>
-    <item>@drawable/route_point_03</item>
-    <item>@drawable/route_point_04</item>
-    <item>@drawable/route_point_05</item>
-    <item>@drawable/route_point_06</item>
-    <item>@drawable/route_point_07</item>
-    <item>@drawable/route_point_08</item>
-    <item>@drawable/route_point_09</item>
-    <item>@drawable/route_point_10</item>
-    <item>@drawable/route_point_11</item>
-    <item>@drawable/route_point_12</item>
-    <item>@drawable/route_point_13</item>
-    <item>@drawable/route_point_14</item>
-    <item>@drawable/route_point_15</item>
-    <item>@drawable/route_point_16</item>
-    <item>@drawable/route_point_17</item>
-    <item>@drawable/route_point_18</item>
-    <item>@drawable/route_point_19</item>
-    <item>@drawable/route_point_20</item>
-  </integer-array>
+    <string-array name="app_tips">
+        <item>@string/app_tip_00</item>
+        <item>@string/app_tip_01</item>
+        <item>@string/app_tip_02</item>
+        <item>@string/app_tip_03</item>
+        <item>@string/app_tip_04</item>
+        <item>@string/app_tip_05</item>
+        <item>@string/app_tip_06</item>
+        <item>@string/app_tip_07</item>
+        <item>@string/app_tip_08</item>
+        <item>@string/app_tip_09</item>
+    </string-array>
+    <string-array name="bookmarks_text_placement_options">
+        <item>@string/hide</item>
+        <item>@string/show_to_the_right</item>
+        <item>@string/show_at_the_bottom</item>
+    </string-array>
+    <string-array name="bookmarks_text_placement_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+    <string-array name="hosts_allowlist_sample">
+        <item>fdb00c43dbde8b51cb312aa81d3b5fa17713adb94b28f598d77f8eb89daceedf, com.google.android.projection.gearhead</item>
+        <item>70811a3eacfd2e83e18da9bfede52df16ce91f2e69a44d21f18ab66991130771, com.google.android.projection.gearhead</item>
+        <item>1975b2f17177bc89a5dff31f9e64a6cae281a53dc1d1d59b1d147fe1c82afa00, com.google.android.projection.gearhead</item>
+        <item>c241ffbc8e287c4e9a4ad19632ba1b1351ad361d5177b7d7b29859bd2b7fc631, com.google.android.apps.automotive.templates.host</item>
+        <item>dd66deaf312d8daec7adbe85a218ecc8c64f3b152f9b5998d5b29300c2623f61, com.google.android.apps.automotive.templates.host</item>
+        <item>50e603d333c6049a37bd751375d08f3bd0abebd33facd30bd17b64b89658b421, com.google.android.apps.automotive.templates.host</item>
+    </string-array>
+    <string-array name="map_appearance">
+        <item>@string/follow_system</item>
+        <item>@string/pref_appearance_light</item>
+        <item>@string/pref_appearance_dark</item>
+        <item>@string/pref_appearance_scheduled</item>
+    </string-array>
+    <string-array name="measument_units">
+        <item>@string/kilometres</item>
+        <item>@string/miles</item>
+    </string-array>
+    <string-array name="measument_units_values">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+    <string-array name="mobile_data_options">
+        <item>@string/mobile_data_option_ask</item>
+        <item>@string/mobile_data_option_always</item>
+        <item>@string/mobile_data_option_never</item>
+    </string-array>
+    <string-array name="mobile_data_options_values">
+        <item>ASK</item>
+        <item>ALWAYS</item>
+        <item>NEVER</item>
+    </string-array>
+    <string-array name="power_management_scheme">
+        <item>@string/power_managment_setting_never</item>
+        <item>@string/power_managment_setting_manual_max</item>
+        <item>@string/power_managment_setting_auto</item>
+    </string-array>
+    <string-array name="power_management_scheme_values">
+        <item>1</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
+    <array name="route_stop_icons">
+        <item>@drawable/route_point_01</item>
+        <item>@drawable/route_point_02</item>
+        <item>@drawable/route_point_03</item>
+        <item>@drawable/route_point_04</item>
+        <item>@drawable/route_point_05</item>
+        <item>@drawable/route_point_06</item>
+        <item>@drawable/route_point_07</item>
+        <item>@drawable/route_point_08</item>
+        <item>@drawable/route_point_09</item>
+        <item>@drawable/route_point_10</item>
+        <item>@drawable/route_point_11</item>
+        <item>@drawable/route_point_12</item>
+        <item>@drawable/route_point_13</item>
+        <item>@drawable/route_point_14</item>
+        <item>@drawable/route_point_15</item>
+        <item>@drawable/route_point_16</item>
+        <item>@drawable/route_point_17</item>
+        <item>@drawable/route_point_18</item>
+        <item>@drawable/route_point_19</item>
+        <item>@drawable/route_point_20</item>
+    </array>
+    <string-array name="speed_cameras">
+        <item>@string/pref_tts_speedcams_auto</item>
+        <item>@string/pref_tts_speedcams_always</item>
+        <item>@string/pref_tts_speedcams_never</item>
+    </string-array>
+    <string-array name="speed_cameras_values">
+        <item>@string/auto_enum_value</item>
+        <item>@string/always_enum_value</item>
+        <item>@string/never_enum_value</item>
+    </string-array>
+
+    <string-array name="routes_count_entries">
+        <item>1 маршрут</item>
+        <item>2 маршрута</item>
+        <item>3 маршрута</item>
+        <item>4 маршрута</item>
+        <item>5 маршрутов</item>
+        <item>6 маршрутов</item>
+        <item>7 маршрутов</item>
+        <item>8 маршрутов</item>
+        <item>9 маршрутов</item>
+        <item>10 маршрутов (максимум)</item>
+    </string-array>
+    <string-array name="routes_count_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+        <item>5</item>
+        <item>6</item>
+        <item>7</item>
+        <item>8</item>
+        <item>9</item>
+        <item>10</item>
+    </string-array>
+    <string-array name="routes_alpha_entries">
+        <item>15% (почти прозрачные)</item>
+        <item>30% (полупрозрачные)</item>
+        <item>45% (сбалансированные)</item>
+        <item>60% (заметные)</item>
+        <item>75% (плотные)</item>
+        <item>100% (непрозрачные)</item>
+    </string-array>
+    <string-array name="routes_alpha_values">
+        <item>15</item>
+        <item>30</item>
+        <item>45</item>
+        <item>60</item>
+        <item>75</item>
+        <item>100</item>
+    </string-array>
+    <string-array name="route_color_main_entries">
+        <item>Синий фаворит (#1886FE)</item>
+        <item>Изумрудный (#00A86B)</item>
+        <item>Янтарный (#FF9800)</item>
+        <item>Фиолетовый (#7B1FA2)</item>
+    </string-array>
+    <string-array name="route_color_main_values">
+        <item>#1886FE</item>
+        <item>#00A86B</item>
+        <item>#FF9800</item>
+        <item>#7B1FA2</item>
+    </string-array>
+    <string-array name="route_color_alt_entries">
+        <item>Серый полупрозрачный (#607D8B)</item>
+        <item>Графитовый (#455A64)</item>
+        <item>Приглушённый синий (#90CAF9)</item>
+        <item>Стальной (#78909C)</item>
+    </string-array>
+    <string-array name="route_color_alt_values">
+        <item>#607D8B</item>
+        <item>#455A64</item>
+        <item>#90CAF9</item>
+        <item>#78909C</item>
+    </string-array>
+
 </resources>

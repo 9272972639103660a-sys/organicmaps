@@ -98,7 +98,7 @@ public final class Config
   }
 
   @NonNull
-  private static String getString(String key, String def)
+  public static String getString(String key, String def)
   {
     return nativeGetString(key, def);
   }
@@ -128,7 +128,7 @@ public final class Config
     nativeSetDouble(key, value);
   }
 
-  private static void setString(String key, String value)
+  public static void setString(String key, String value)
   {
     nativeSetString(key, value);
   }

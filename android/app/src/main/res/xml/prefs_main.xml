@@ -165,17 +165,19 @@
       android:order="5"
       android:title="@string/driving_options_title">
     </PreferenceScreen>
+
     <ListPreference
-      android:key="pref_custom_routes_count"
-      android:title="@string/pref_routes_count_title"
-      android:summary="@string/pref_routes_count_summary"
-      android:entries="@array/routes_count_entries"
-      android:entryValues="@array/routes_count_values"
-      android:defaultValue="10"
+      android:key="pref_main_route_color"
+      android:title="@string/pref_main_route_color_title"
+      android:summary="@string/pref_main_route_color_summary"
+      android:entries="@array/route_color_main_entries"
+      android:entryValues="@array/route_color_main_values"
+      android:defaultValue="#1886FE"
       app:singleLineTitle="false"
       android:order="6" />
+
     <ListPreference
-      android:key="pref_custom_routes_alpha"
+      android:key="pref_routes_alpha"
       android:title="@string/pref_alt_route_alpha_title"
       android:summary="@string/pref_alt_route_alpha_summary"
       android:entries="@array/routes_alpha_entries"
@@ -183,25 +185,65 @@
       android:defaultValue="45"
       app:singleLineTitle="false"
       android:order="7" />
+  </androidx.preference.PreferenceCategory>
+
+  <androidx.preference.PreferenceCategory
+    android:key="pref_category_std_routes"
+    android:title="@string/pref_category_std_routes"
+    android:order="4">
     <ListPreference
-      android:key="pref_custom_main_color"
-      android:title="@string/pref_main_route_color_title"
-      android:summary="@string/pref_main_route_color_summary"
-      android:entries="@array/route_color_main_entries"
-      android:entryValues="@array/route_color_main_values"
-      android:defaultValue="#1886FE"
+      android:key="pref_std_routes_count"
+      android:title="@string/pref_std_routes_count_title"
+      android:summary="@string/pref_std_routes_count_summary"
+      android:entries="@array/routes_count_with_zero_entries"
+      android:entryValues="@array/routes_count_with_zero_values"
+      android:defaultValue="2"
       app:singleLineTitle="false"
-      android:order="8" />
+      android:order="1" />
     <ListPreference
-      android:key="pref_custom_alt_color"
-      android:title="@string/pref_alt_route_color_title"
-      android:summary="@string/pref_alt_route_color_summary"
-      android:entries="@array/route_color_alt_entries"
-      android:entryValues="@array/route_color_alt_values"
+      android:key="pref_std_route_color"
+      android:title="@string/pref_std_route_color_title"
+      android:summary="@string/pref_std_route_color_summary"
+      android:entries="@array/route_color_std_entries"
+      android:entryValues="@array/route_color_std_values"
       android:defaultValue="#607D8B"
       app:singleLineTitle="false"
-      android:order="9" />
+      android:order="2" />
   </androidx.preference.PreferenceCategory>
+
+  <androidx.preference.PreferenceCategory
+    android:key="pref_category_deep_routes"
+    android:title="@string/pref_category_deep_routes"
+    android:order="5">
+    <ListPreference
+      android:key="pref_deep_routes_count"
+      android:title="@string/pref_deep_routes_count_title"
+      android:summary="@string/pref_deep_routes_count_summary"
+      android:entries="@array/routes_count_with_zero_entries"
+      android:entryValues="@array/routes_count_with_zero_values"
+      android:defaultValue="2"
+      app:singleLineTitle="false"
+      android:order="1" />
+    <ListPreference
+      android:key="pref_deep_route_color"
+      android:title="@string/pref_deep_route_color_title"
+      android:summary="@string/pref_deep_route_color_summary"
+      android:entries="@array/route_color_deep_entries"
+      android:entryValues="@array/route_color_deep_values"
+      android:defaultValue="#FF9800"
+      app:singleLineTitle="false"
+      android:order="2" />
+    <ListPreference
+      android:key="pref_deep_routes_max_eta"
+      android:title="@string/pref_deep_routes_max_eta_title"
+      android:summary="@string/pref_deep_routes_max_eta_summary"
+      android:entries="@array/routes_max_eta_entries"
+      android:entryValues="@array/routes_max_eta_values"
+      android:defaultValue="1.6"
+      app:singleLineTitle="false"
+      android:order="3" />
+  </androidx.preference.PreferenceCategory>
+
   <androidx.preference.PreferenceCategory
     android:key="@string/pref_privacy"
     android:title="@string/privacy"

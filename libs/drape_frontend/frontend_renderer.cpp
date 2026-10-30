@@ -2635,7 +2635,7 @@ void FrontendRenderer::Routine::Do()
   m_renderer.CreateContext();
 
 #if defined(DEBUG) || defined(DEBUG_DRAPE_XCODE) || defined(SCENARIO_ENABLE)
-  gui::DrapeGui::Instance().GetScaleFpsHelper().SetVisible(true);
+  gui::DrapeGui::Instance().GetScaleFpsHelper().SetVisible(false);
 #endif
 
   m_renderer.ScheduleOverlayCollecting();

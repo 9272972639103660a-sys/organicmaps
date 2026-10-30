@@ -560,6 +560,8 @@ RouterResultCode IndexRouter::CalculateRoute(Checkpoints const & checkpoints, m2
       diffMidpoint = m_vehicleType == VehicleType::Transit
                        ? altRoute.FindMaxDiffMidpointByGeometry(route.GetRouteSegments())
                        : altRoute.FindMaxDiffMidpoint(route.GetRouteSegments());
+      if (!diffMidpoint && altRoute.GetPolyline().GetSize() > 2)
+        diffMidpoint = altRoute.GetPolyline().GetPoint(altRoute.GetPolyline().GetSize() / 2);
     }
 
     result.MakeFrom(GetName(), std::move(route));
@@ -572,6 +574,8 @@ RouterResultCode IndexRouter::CalculateRoute(Checkpoints const & checkpoints, m2
       diffMidpoint = m_vehicleType == VehicleType::Transit
                        ? active.FindMaxDiffMidpointByGeometry(altRoute.GetRouteSegments())
                        : active.FindMaxDiffMidpoint(altRoute.GetRouteSegments());
+      if (!diffMidpoint && active.GetPolyline().GetSize() > 2)
+        diffMidpoint = active.GetPolyline().GetPoint(active.GetPolyline().GetSize() / 2);
       if (diffMidpoint)
         active.SetDiffMidpoint(*diffMidpoint);
 

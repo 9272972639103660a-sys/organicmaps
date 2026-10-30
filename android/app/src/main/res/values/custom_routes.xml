@@ -1,77 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="pref_multi_routes_category">Alternative Routes</string>
-    <string name="pref_routes_count_title">Number of Routes</string>
-    <string name="pref_routes_count_summary">Build up to 10 distinct alternative routes</string>
-    <string name="pref_main_route_color_title">Main Route Color</string>
-    <string name="pref_main_route_color_summary">Highlight the primary favorite route</string>
-    <string name="pref_alt_route_color_title">Alternative Lines Color</string>
-    <string name="pref_alt_route_color_summary">Color for secondary candidate paths</string>
-    <string name="pref_alt_route_alpha_title">Alternatives Transparency</string>
-    <string name="pref_alt_route_alpha_summary">Translucency of alternate lines to reduce clutter</string>
+  <!-- Category Titles -->
+  <string name="pref_category_std_routes">Standard Alternative Routes</string>
+  <string name="pref_category_deep_routes">Deep Detour / Alternative Routes</string>
 
-    <string-array name="routes_count_entries">
-        <item>1 маршрут</item>
-        <item>2 маршрута</item>
-        <item>3 маршрута</item>
-        <item>4 маршрута</item>
-        <item>5 маршрутов</item>
-        <item>6 маршрутов</item>
-        <item>7 маршрутов</item>
-        <item>8 маршрутов</item>
-        <item>9 маршрутов</item>
-        <item>10 маршрутов (максимум)</item>
-    </string-array>
-    <string-array name="routes_count_values">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-        <item>6</item>
-        <item>7</item>
-        <item>8</item>
-        <item>9</item>
-        <item>10</item>
-    </string-array>
-    <string-array name="routes_alpha_entries">
-        <item>15% (почти прозрачные)</item>
-        <item>30% (полупрозрачные)</item>
-        <item>45% (сбалансированные)</item>
-        <item>60% (заметные)</item>
-        <item>75% (плотные)</item>
-        <item>100% (непрозрачные)</item>
-    </string-array>
-    <string-array name="routes_alpha_values">
-        <item>15</item>
-        <item>30</item>
-        <item>45</item>
-        <item>60</item>
-        <item>75</item>
-        <item>100</item>
-    </string-array>
-    <string-array name="route_color_main_entries">
-        <item>Синий фаворит (#1886FE)</item>
-        <item>Изумрудный (#00A86B)</item>
-        <item>Янтарный (#FF9800)</item>
-        <item>Фиолетовый (#7B1FA2)</item>
-    </string-array>
-    <string-array name="route_color_main_values">
-        <item>#1886FE</item>
-        <item>#00A86B</item>
-        <item>#FF9800</item>
-        <item>#7B1FA2</item>
-    </string-array>
-    <string-array name="route_color_alt_entries">
-        <item>Серый полупрозрачный (#607D8B)</item>
-        <item>Графитовый (#455A64)</item>
-        <item>Приглушённый синий (#90CAF9)</item>
-        <item>Стальной (#78909C)</item>
-    </string-array>
-    <string-array name="route_color_alt_values">
-        <item>#607D8B</item>
-        <item>#455A64</item>
-        <item>#90CAF9</item>
-        <item>#78909C</item>
-    </string-array>
+  <!-- Main Route Color -->
+  <string name="pref_main_route_color_title">Main Route Color</string>
+  <string name="pref_main_route_color_summary">Color of the active followed route</string>
+
+  <!-- Standard Routes -->
+  <string name="pref_std_routes_count_title">Standard Routes Count</string>
+  <string name="pref_std_routes_count_summary">Direct optimal alternatives (0 to disable)</string>
+
+  <string name="pref_std_route_color_title">Standard Routes Color</string>
+  <string name="pref_std_route_color_summary">Color of standard alternative lines</string>
+
+  <!-- Deep Routes -->
+  <string name="pref_deep_routes_count_title">Deep Detours Count</string>
+  <string name="pref_deep_routes_count_summary">Parallel streets &amp; bypasses (0 to disable)</string>
+
+  <string name="pref_deep_route_color_title">Deep Detours Color</string>
+  <string name="pref_deep_route_color_summary">Color of deep alternative detour lines</string>
+
+  <string name="pref_deep_routes_max_eta_title">Deep Detour Max Extra Time</string>
+  <string name="pref_deep_routes_max_eta_summary">Maximum allowed detour ETA increase</string>
+
+  <!-- Alpha -->
+  <string name="pref_alt_route_alpha_title">Alternative Routes Transparency</string>
+  <string name="pref_alt_route_alpha_summary">Visual opacity of alternative route lines</string>
+
+  <!-- Arrays: Counts -->
+  <string-array name="routes_count_with_zero_entries">
+    <item>Disabled (0)</item>
+    <item>1 route</item>
+    <item>2 routes</item>
+    <item>3 routes</item>
+    <item>4 routes</item>
+    <item>5 routes</item>
+  </string-array>
+  <string-array name="routes_count_with_zero_values">
+    <item>0</item>
+    <item>1</item>
+    <item>2</item>
+    <item>3</item>
+    <item>4</item>
+    <item>5</item>
+  </string-array>
+
+  <!-- Arrays: Colors Main -->
+  <string-array name="route_color_main_entries">
+    <item>Electric Blue (#1886FE)</item>
+    <item>Emerald Green (#00A86B)</item>
+    <item>Amber Orange (#FF9800)</item>
+    <item>Royal Purple (#7B1FA2)</item>
+  </string-array>
+  <string-array name="route_color_main_values">
+    <item>#1886FE</item>
+    <item>#00A86B</item>
+    <item>#FF9800</item>
+    <item>#7B1FA2</item>
+  </string-array>
+
+  <!-- Arrays: Colors Std Alt -->
+  <string-array name="route_color_std_entries">
+    <item>Slate Gray (#607D8B)</item>
+    <item>Teal Green (#00A86B)</item>
+    <item>Sky Blue (#90CAF9)</item>
+    <item>Dark Slate (#455A64)</item>
+  </string-array>
+  <string-array name="route_color_std_values">
+    <item>#607D8B</item>
+    <item>#00A86B</item>
+    <item>#90CAF9</item>
+    <item>#455A64</item>
+  </string-array>
+
+  <!-- Arrays: Colors Deep Alt -->
+  <string-array name="route_color_deep_entries">
+    <item>Amber Orange (#FF9800)</item>
+    <item>Vibrant Purple (#7B1FA2)</item>
+    <item>Coral Red (#E91E63)</item>
+    <item>Golden Yellow (#FFC107)</item>
+  </string-array>
+  <string-array name="route_color_deep_values">
+    <item>#FF9800</item>
+    <item>#7B1FA2</item>
+    <item>#E91E63</item>
+    <item>#FFC107</item>
+  </string-array>
+
+  <!-- Arrays: Max ETA -->
+  <string-array name="routes_max_eta_entries">
+    <item>+20% max</item>
+    <item>+40% max</item>
+    <item>+60% max (Recommended)</item>
+    <item>+80% max</item>
+    <item>+100% max (2x time)</item>
+  </string-array>
+  <string-array name="routes_max_eta_values">
+    <item>1.2</item>
+    <item>1.4</item>
+    <item>1.6</item>
+    <item>1.8</item>
+    <item>2.0</item>
+  </string-array>
+
+  <!-- Arrays: Alpha -->
+  <string-array name="routes_alpha_entries">
+    <item>15% (Subtle)</item>
+    <item>30% (Light)</item>
+    <item>45% (Balanced)</item>
+    <item>60% (Medium)</item>
+    <item>80% (Clear)</item>
+    <item>100% (Solid)</item>
+  </string-array>
+  <string-array name="routes_alpha_values">
+    <item>15</item>
+    <item>30</item>
+    <item>45</item>
+    <item>60</item>
+    <item>80</item>
+    <item>100</item>
+  </string-array>
 </resources>

@@ -1,12 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="pref_multi_routes_category">Альтернативные маршруты</string>
-    <string name="pref_routes_count_title">Количество маршрутов (до 10)</string>
-    <string name="pref_routes_count_summary">Отображать до 10 уникальных вариантов пути</string>
-    <string name="pref_main_route_color_title">Цвет основного фаворита</string>
-    <string name="pref_main_route_color_summary">Яркий цвет главного пути (синий)</string>
-    <string name="pref_alt_route_color_title">Цвет альтернативных линий</string>
-    <string name="pref_alt_route_color_summary">Цвет второстепенных линий (серый)</string>
-    <string name="pref_alt_route_alpha_title">Прозрачность альтернатив</string>
-    <string name="pref_alt_route_alpha_summary">Степень полупрозрачности для фона карты</string>
+  <!-- Category Titles -->
+  <string name="pref_category_std_routes">Стандартные альтернативные маршруты</string>
+  <string name="pref_category_deep_routes">Глубокие объезды (альтернативные пути)</string>
+
+  <!-- Main Route Color -->
+  <string name="pref_main_route_color_title">Цвет основного маршрута</string>
+  <string name="pref_main_route_color_summary">Цвет активной линии ведения</string>
+
+  <!-- Standard Routes -->
+  <string name="pref_std_routes_count_title">Количество стандартных маршрутов</string>
+  <string name="pref_std_routes_count_summary">Прямые оптимальные альтернативы (0 — выключить)</string>
+
+  <string name="pref_std_route_color_title">Цвет стандартных маршрутов</string>
+  <string name="pref_std_route_color_summary">Цвет линий стандартных альтернатив</string>
+
+  <!-- Deep Routes -->
+  <string name="pref_deep_routes_count_title">Количество глубоких объездов</string>
+  <string name="pref_deep_routes_count_summary">Параллельные улицы и объезды (0 — выключить)</string>
+
+  <string name="pref_deep_route_color_title">Цвет глубоких объездов</string>
+  <string name="pref_deep_route_color_summary">Цвет линий глубоких объездов</string>
+
+  <string name="pref_deep_routes_max_eta_title">Допустимое удлинение времени</string>
+  <string name="pref_deep_routes_max_eta_summary">Максимальный порог перепробега по времени</string>
+
+  <!-- Alpha -->
+  <string name="pref_alt_route_alpha_title">Прозрачность альтернатив</string>
+  <string name="pref_alt_route_alpha_summary">Степень непрозрачности линий</string>
+
+  <!-- Arrays: Counts -->
+  <string-array name="routes_count_with_zero_entries">
+    <item>Выключено (0)</item>
+    <item>1 маршрут</item>
+    <item>2 маршрута</item>
+    <item>3 маршрута</item>
+    <item>4 маршрута</item>
+    <item>5 маршрутов</item>
+  </string-array>
+
+  <!-- Arrays: Colors Main -->
+  <string-array name="route_color_main_entries">
+    <item>Ярко-синий (#1886FE)</item>
+    <item>Изумрудно-зеленый (#00A86B)</item>
+    <item>Янтарно-оранжевый (#FF9800)</item>
+    <item>Королевский фиолетовый (#7B1FA2)</item>
+  </string-array>
+
+  <!-- Arrays: Colors Std Alt -->
+  <string-array name="route_color_std_entries">
+    <item>Грифельно-серый (#607D8B)</item>
+    <item>Бирюзовый (#00A86B)</item>
+    <item>Небесно-голубой (#90CAF9)</item>
+    <item>Темно-серый (#455A64)</item>
+  </string-array>
+
+  <!-- Arrays: Colors Deep Alt -->
+  <string-array name="route_color_deep_entries">
+    <item>Янтарно-оранжевый (#FF9800)</item>
+    <item>Насыщенный фиолетовый (#7B1FA2)</item>
+    <item>Кораллово-красный (#E91E63)</item>
+    <item>Золотисто-желтый (#FFC107)</item>
+  </string-array>
+
+  <!-- Arrays: Max ETA -->
+  <string-array name="routes_max_eta_entries">
+    <item>+20% максимум</item>
+    <item>+40% максимум</item>
+    <item>+60% максимум (Рекомендуется)</item>
+    <item>+80% максимум</item>
+    <item>+100% максимум (в 2 раза дольше)</item>
+  </string-array>
+
+  <!-- Arrays: Alpha -->
+  <string-array name="routes_alpha_entries">
+    <item>15% (Едва заметные)</item>
+    <item>30% (Светлые)</item>
+    <item>45% (Оптимально)</item>
+    <item>60% (Умеренно)</item>
+    <item>80% (Четкие)</item>
+    <item>100% (Плотные)</item>
+  </string-array>
 </resources>

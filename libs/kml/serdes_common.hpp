@@ -29,6 +29,9 @@ bool IsValidLatLon(double lat, double lon);
 // reserves the lowest int16 value as an invalid sentinel, returned for a non-finite input.
 geometry::Altitude ToAltitude(double altitude);
 
+// Suitable for XML text and quoted attribute values, including literal attribute whitespace.
+std::string EscapeXml(std::string_view value);
+
 void SaveStringWithCDATA(Writer & writer, std::string_view s);
 
 std::string_view constexpr kIndent0{};

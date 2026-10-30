@@ -65,6 +65,29 @@ geometry::Altitude ToAltitude(double altitude)
   return static_cast<geometry::Altitude>(std::clamp(std::round(altitude), kMinAltitude, kMaxAltitude));
 }
 
+std::string EscapeXml(std::string_view value)
+{
+  std::string escaped;
+  escaped.reserve(value.size());
+  for (char const c : value)
+  {
+    switch (c)
+    {
+    case '&': escaped += "&amp;"; break;
+    case '<': escaped += "&lt;"; break;
+    case '>': escaped += "&gt;"; break;
+    case '"': escaped += "&quot;"; break;
+    case '\'': escaped += "&apos;"; break;
+    // Character references preserve whitespace through XML attribute normalization.
+    case '\t': escaped += "&#9;"; break;
+    case '\n': escaped += "&#10;"; break;
+    case '\r': escaped += "&#13;"; break;
+    default: escaped += c; break;
+    }
+  }
+  return escaped;
+}
+
 void SaveStringWithCDATA(Writer & writer, std::string_view s)
 {
   if (s.empty())

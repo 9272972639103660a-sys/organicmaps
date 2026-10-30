@@ -841,7 +841,7 @@ void RoutingManager::InsertSingleRoute(RouteBase const & route, bool isActive, d
   if (!route.IsValid())
     return;
 
-  float const alphaMul = isActive ? 1.0f : kAlternativeRouteAlphaMul;
+  float const alphaMul = isActive ? 1.0f : (route.IsDeepAlt() ? 0.65f : kAlternativeRouteAlphaMul);
 
   std::vector<RouteSegment> segments;
   double distance = 0.0;
@@ -863,7 +863,10 @@ void RoutingManager::InsertSingleRoute(RouteBase const & route, bool isActive, d
     case RouterType::Vehicle:
     {
       subroute->m_routeType = df::RouteType::Car;
-      subroute->AddStyle(df::SubrouteStyle(df::kRouteColor, df::kRouteOutlineColor));
+      if (!isActive && route.IsDeepAlt())
+        subroute->AddStyle(df::SubrouteStyle(df::kRoutePedestrian, df::kRouteOutlineColor));
+      else
+        subroute->AddStyle(df::SubrouteStyle(df::kRouteColor, df::kRouteOutlineColor));
       // Skip traffic colors on alternatives — keep them visually muted and easy to distinguish.
       if (isActive)
       {

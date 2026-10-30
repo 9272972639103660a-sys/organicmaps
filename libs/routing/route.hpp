@@ -332,6 +332,9 @@ public:
   std::optional<m2::PointD> const & GetDiffMidpoint() const { return m_diffMidpoint; }
   void SetDiffMidpoint(m2::PointD const & pt) { m_diffMidpoint = pt; }
 
+  bool IsDeepAlt() const { return m_isDeepAlt; }
+  void SetIsDeepAlt(bool isDeep) { m_isDeepAlt = isDeep; }
+
   double GetTotalTimeSec() const;
 
   m2::RectD GetLimitRect() const;
@@ -408,6 +411,7 @@ protected:
 
   // Pivot for the alternative-route ETA balloon — midpoint of the longest segment span.
   std::optional<m2::PointD> m_diffMidpoint;
+  bool m_isDeepAlt = false;
 };
 
 /// \brief A RouteBase that the user is actively following: adds the matched position on the polyline,

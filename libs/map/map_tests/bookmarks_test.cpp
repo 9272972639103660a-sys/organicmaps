@@ -427,19 +427,30 @@ UNIT_CLASS_TEST(AreasTestFixture, Bookmarks_AreaExportCapabilitiesAndSnapshots)
     RunNextGuiTask();
 }
 
-UNIT_CLASS_TEST(Runner, Bookmarks_AreaCategoryBoundsUseContinuousLongitudes)
+UNIT_CLASS_TEST(Runner, Bookmarks_AreaCategoryBoundsPreservePolygonFootprints)
 {
-  std::string const narrow = R"(<Placemark><Polygon><outerBoundaryIs><LinearRing>
-    <coordinates>179,-10 -179,-10 -179,10 179,10 179,-10</coordinates>
-    </LinearRing></outerBoundaryIs></Polygon></Placemark>)";
+  std::string const narrow = R"(<Placemark><MultiGeometry>
+    <Polygon><outerBoundaryIs><LinearRing>
+      <coordinates>179,-10 180,-10 180,10 179,10 179,-10</coordinates>
+    </LinearRing></outerBoundaryIs></Polygon>
+    <Polygon><outerBoundaryIs><LinearRing>
+      <coordinates>-180,-10 -179,-10 -179,10 -180,10 -180,-10</coordinates>
+    </LinearRing></outerBoundaryIs></Polygon>
+    </MultiGeometry></Placemark>)";
   std::string const mixed = R"(
     <Placemark><Point><coordinates>179.5,0</coordinates></Point></Placemark>
     <Placemark><Point><coordinates>-179.5,0</coordinates></Point></Placemark>
     <Placemark><LineString><coordinates>-179.75,0 -179.5,1</coordinates></LineString></Placemark>)";
   std::string const wide = R"(<Placemark><Polygon><outerBoundaryIs><LinearRing>
+    <coordinates>-170,-10 170,-10 170,10 -170,10 -170,-10</coordinates>
+    </LinearRing></outerBoundaryIs></Polygon></Placemark>)";
+  std::string const wideWithMidpoints = R"(<Placemark><Polygon><outerBoundaryIs><LinearRing>
     <coordinates>-170,-10 0,-10 170,-10 170,10 0,10 -170,10 -170,-10</coordinates>
     </LinearRing></outerBoundaryIs></Polygon></Placemark>
     <Placemark><Point><coordinates>160,0</coordinates></Point></Placemark>)";
+  std::string const wholeWorld = R"(<Placemark><Polygon><outerBoundaryIs><LinearRing>
+    <coordinates>-180,-10 180,-10 180,10 -180,10 -180,-10</coordinates>
+    </LinearRing></outerBoundaryIs></Polygon></Placemark>)";
   std::string const independent = narrow + R"(<Placemark><Polygon><outerBoundaryIs><LinearRing>
     <coordinates>-177,-5 -176,-5 -176,5 -177,5 -177,-5</coordinates>
     </LinearRing></outerBoundaryIs></Polygon></Placemark>)";
@@ -447,8 +458,29 @@ UNIT_CLASS_TEST(Runner, Bookmarks_AreaCategoryBoundsUseContinuousLongitudes)
     <Placemark><Point><coordinates>-10,0</coordinates></Point></Placemark>
     <Placemark><Point><coordinates>10,0</coordinates></Point></Placemark>
     <Placemark><LineString><coordinates>-5,0 5,1</coordinates></LineString></Placemark>)";
-  for (auto const & [geometry, width] : std::vector<std::pair<std::string, double>>{
-           {narrow, 2}, {narrow + mixed, 2}, {wide, 340}, {independent, 5}, {areaFree, 20}})
+  std::string const seamBookmarks = R"(
+    <Placemark><Point><coordinates>-179.5,0</coordinates></Point></Placemark>
+    <Placemark><Point><coordinates>179.5,0</coordinates></Point></Placemark>)";
+  auto const rectangle = [](int lon)
+  {
+    auto const west = std::to_string(lon);
+    auto const east = std::to_string(lon + 1);
+    return "<Placemark><Polygon><outerBoundaryIs><LinearRing><coordinates>" + west + ",0 " + east + ",0 " + east +
+           ",1 " + west + ",1 " + west + ",0</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>";
+  };
+  std::vector<std::pair<std::string, double>> const cases = {{narrow, 360},
+                                                             {narrow + mixed, 360},
+                                                             {wide, 340},
+                                                             {wideWithMidpoints, 340},
+                                                             {wide + mixed, 359.25},
+                                                             {wholeWorld, 360},
+                                                             {independent, 360},
+                                                             {areaFree, 20},
+                                                             {seamBookmarks, 359},
+                                                             {seamBookmarks + rectangle(170), 359},
+                                                             {rectangle(-101) + rectangle(100) + rectangle(0), 202},
+                                                             {rectangle(-101) + rectangle(0) + rectangle(100), 202}};
+  for (auto const & [geometry, width] : cases)
   {
     BookmarkManager manager(BM_CALLBACKS);
     manager.EnableTestMode(true);

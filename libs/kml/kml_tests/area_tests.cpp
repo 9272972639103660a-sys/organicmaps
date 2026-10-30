@@ -9,8 +9,6 @@
 #include "coding/reader.hpp"
 #include "coding/writer.hpp"
 
-#include "geometry/mercator.hpp"
-
 #include "base/math.hpp"
 
 #include <algorithm>
@@ -40,8 +38,7 @@ double SignedRingArea(kml::AreaRing const & ring)
   double area = 0;
   for (size_t i = 1; i < ring.size(); ++i)
   {
-    auto point = ring[i].m_latLon;
-    point.m_lon = mercator::NearestWrapX(point.m_lon, previous.m_lon);
+    auto const & point = ring[i].m_latLon;
     area += (previous.m_lon - origin.m_lon) * (point.m_lat - origin.m_lat) -
             (previous.m_lat - origin.m_lat) * (point.m_lon - origin.m_lon);
     previous = point;
@@ -97,10 +94,10 @@ UNIT_TEST(Area_IndependentPolygonsMayOverlap)
   TEST_EQUAL(polygons.size(), 2, ());
 }
 
-UNIT_TEST(Area_AntimeridianShellAndHoleRetainVertices)
+UNIT_TEST(Area_WideShellAndHoleRetainVertices)
 {
   auto shell = Ring({{179, -10}, {-179, -10}, {-179, 10}, {179, 10}});
-  auto hole = Ring({{179.5, -5}, {179.5, 5}, {-179.5, 5}, {-179.5, -5}});
+  auto hole = Ring({{-5, -5}, {-5, 5}, {5, 5}, {5, -5}});
   for (size_t i = 0; i < shell.size(); ++i)
     shell[i].m_altitude = 100.12345678901234 + i;
   hole[1].m_altitude = 0;
@@ -122,8 +119,8 @@ UNIT_TEST(Area_AntimeridianShellAndHoleRetainVertices)
     TEST(std::is_permutation(shell.begin(), shell.end(), polygon.m_outer.begin(), polygon.m_outer.end()), ());
     auto const & normalizedHole = polygon.m_holes.front();
     TEST(std::is_permutation(hole.begin(), hole.end(), normalizedHole.begin(), normalizedHole.end()), ());
-    TEST_GREATER(SignedRingArea(polygon.m_outer), 0, ());
-    TEST_LESS(SignedRingArea(normalizedHole), 0, ());
+    TEST_EQUAL(SignedRingArea(polygon.m_outer), 7160, ());
+    TEST_EQUAL(SignedRingArea(normalizedHole), -100, ());
 
     std::string text;
     MemWriter writer(text);
@@ -134,7 +131,7 @@ UNIT_TEST(Area_AntimeridianShellAndHoleRetainVertices)
 
 UNIT_TEST(Area_WideShellRetainsHolesOnBothSides)
 {
-  auto const shell = Ring({{-170, -10}, {0, -10}, {170, -10}, {170, 10}, {0, 10}, {-170, 10}});
+  auto const shell = Ring({{-170, -10}, {170, -10}, {170, 10}, {-170, 10}});
   auto const westHole = Ring({{-165, -5}, {-165, 5}, {-160, 5}, {-160, -5}});
   auto const eastHole = Ring({{160, -5}, {160, 5}, {165, 5}, {165, -5}});
   std::vector<kml::AreaPolygon> polygons{{shell, {westHole, eastHole}}};
@@ -145,10 +142,13 @@ UNIT_TEST(Area_WideShellRetainsHolesOnBothSides)
     TEST_LESS(SignedRingArea(hole), 0, ());
 }
 
-UNIT_TEST(Area_RejectInvalidAntimeridianTopology)
+UNIT_TEST(Area_WideShellRejectsInvalidTopology)
 {
   auto const shell = Ring({{179, -10}, {-179, -10}, {-179, 10}, {179, 10}});
   std::vector<kml::AreaPolygon> polygons{{shell, {Ring({{179.5, 12}, {-179.5, 12}, {-179.5, 14}, {179.5, 14}})}}};
+  TEST(!kml::NormalizeAreaGeometry(polygons), ());
+  // The hole spans 359 degrees and lies outside the 358-degree shell.
+  polygons = {{shell, {Ring({{179.5, -5}, {179.5, 5}, {-179.5, 5}, {-179.5, -5}})}}};
   TEST(!kml::NormalizeAreaGeometry(polygons), ());
   polygons = {{Ring({{179, -10}, {-179, 10}, {179, 10}, {-179, -10}}), {}}};
   TEST(!kml::NormalizeAreaGeometry(polygons), ());

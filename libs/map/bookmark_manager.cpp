@@ -1731,7 +1731,15 @@ m2::RectD BookmarkManager::GetCategoryRect(kml::MarkGroupId categoryId, bool add
   if (category->IsEmpty())
     return categoryRect;
 
-  m2::RectD areasRect;
+  for (auto markId : category->GetUserMarks())
+    categoryRect.Add(GetBookmark(markId)->GetPivot());
+  if (addIconsSize && !category->GetUserMarks().empty())
+  {
+    double const coeff = m_maxBookmarkSymbolSize.y / (m_viewport.PixelRect().SizeY() - m_maxBookmarkSymbolSize.y);
+    categoryRect.Add(categoryRect.LeftTop() + m2::PointD(0.0, categoryRect.SizeY() * coeff));
+  }
+  for (auto trackId : category->GetUserLines())
+    categoryRect.Add(GetTrack(trackId)->GetLimitRect());
   for (auto areaId : category->GetUserAreas())
   {
     auto const * area = GetArea(areaId);
@@ -1739,52 +1747,11 @@ m2::RectD BookmarkManager::GetCategoryRect(kml::MarkGroupId categoryId, bool add
     for (auto const & polygon : area->m_polygons)
     {
       ASSERT_GREATER_OR_EQUAL(polygon.m_outer.size(), 3, (areaId));
-      m2::RectD polygonRect;
-      auto reference = polygon.m_outer.front().m_latLon.m_lon;
       for (auto const & point : polygon.m_outer)
-      {
-        auto projected = mercator::FromLatLon(point.m_latLon);
-        projected.x = mercator::NearestWrapX(projected.x, reference);
-        reference = projected.x;
-        polygonRect.Add(projected);
-      }
-      if (areasRect.IsValid())
-      {
-        auto const center = polygonRect.Center().x;
-        polygonRect.Offset(mercator::NearestWrapX(center, areasRect.Center().x) - center, 0);
-      }
-      areasRect.Add(polygonRect);
+        categoryRect.Add(mercator::FromLatLon(point.m_latLon));
     }
   }
-
-  // Combine complete polygon bounds and other saved objects in the same world copy.
-  for (auto markId : category->GetUserMarks())
-  {
-    auto const bookmark = GetBookmark(markId);
-    auto pivot = bookmark->GetPivot();
-    if (areasRect.IsValid())
-      pivot.x = mercator::NearestWrapX(pivot.x, areasRect.Center().x);
-    categoryRect.Add(pivot);
-  }
-  if (addIconsSize && !category->GetUserMarks().empty())
-  {
-    double const coeff = m_maxBookmarkSymbolSize.y / (m_viewport.PixelRect().SizeY() - m_maxBookmarkSymbolSize.y);
-    categoryRect.Add(categoryRect.LeftTop() + m2::PointD(0.0, categoryRect.SizeY() * coeff));
-  }
-  for (auto trackId : category->GetUserLines())
-  {
-    auto const track = GetTrack(trackId);
-    auto rect = track->GetLimitRect();
-    if (areasRect.IsValid())
-    {
-      auto const center = rect.Center().x;
-      rect.Offset(mercator::NearestWrapX(center, areasRect.Center().x) - center, 0);
-    }
-    categoryRect.Add(rect);
-  }
-  categoryRect.Add(areasRect);
-
-  return areasRect.IsValid() ? mercator::WrapRectX(categoryRect) : categoryRect;
+  return categoryRect;
 }
 
 kml::CategoryData const & BookmarkManager::GetCategoryData(kml::MarkGroupId categoryId) const

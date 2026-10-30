@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <unordered_set>
 
 class DataSource;
 
@@ -76,6 +77,17 @@ public:
   /// edges priced by other models (leap edges and precomputed cross-mwm weights in
   /// WorldGraphMode::LeapsOnly, guides edges — see SetStrategy), |tightAllowed| == true divides by
   /// the cap instead, keeping the heuristic admissible while much tighter.
+  void SetPenalizedSegments(std::unordered_set<Segment> segments, double factor = 3.0)
+  {
+    m_penalizedSegments = std::move(segments);
+    m_penaltyFactor = factor;
+  }
+  void ClearPenalizedSegments()
+  {
+    m_penalizedSegments.clear();
+    m_penaltyFactor = 1.0;
+  }
+
   double CalcHeuristic(ms::LatLon const & from, ms::LatLon const & to, bool tightAllowed = false) const;
   // Estimates time in seconds it takes to go from point |from| to point |to| along a leap (fake)
   // edge |from|-|to| using real features.
@@ -108,6 +120,18 @@ public:
 protected:
   /// Applies Strategy::DistanceBiased to a Normal |weight|: roads not slower than the cap tie by
   /// pure distance, slower ones keep their full cost. No-op for Purpose::ETA and Strategy::Normal.
+  double ApplyStrategy(Purpose purpose, double weight, double distanceM, Segment const & segment) const
+  {
+    if (purpose == Purpose::Weight && m_penaltyFactor > 1.0 && !m_penalizedSegments.empty())
+    {
+      if (m_penalizedSegments.find(segment) != m_penalizedSegments.end())
+        weight *= m_penaltyFactor;
+    }
+    if (purpose == Purpose::Weight && m_strategy == Strategy::DistanceBiased)
+      return std::max(weight, distanceM * m_distanceBiasSecPerM);
+    return weight;
+  }
+
   double ApplyStrategy(Purpose purpose, double weight, double distanceM) const
   {
     if (purpose == Purpose::Weight && m_strategy == Strategy::DistanceBiased)
@@ -123,6 +147,8 @@ private:
   bool m_tightHeuristicAllowed = true;
   double m_transitWalkWeightFactor = 1.0;
   double m_transitAltBoardingPenaltyS = 0.0;
+  std::unordered_set<Segment> m_penalizedSegments;
+  double m_penaltyFactor = 1.0;
 
   // DataSource * m_dataSourcePtr;
   // std::shared_ptr<NumMwmIds> m_numMwmIds;

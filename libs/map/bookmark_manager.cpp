@@ -617,6 +617,13 @@ void BookmarkManager::NotifyChanges(bool saveChangesOnDisk)
     return;
   }
 
+  if (saveChangesOnDisk)
+  {
+    for (auto groupId : m_changesTracker.GetUpdatedGroupIds())
+      if (IsBookmarkCategory(groupId) && GetBmCategory(groupId)->IsAutoSaveEnabled())
+        m_pendingSaveGroups.insert(groupId);
+  }
+
   if (m_changesTracker.HasBookmarksChanges())
     NotifyBookmarksChanged();
 
@@ -629,17 +636,12 @@ void BookmarkManager::NotifyChanges(bool saveChangesOnDisk)
 
   if (m_bookmarksChangesTracker.HasBookmarksChanges())
   {
-    // During the category reloading/updating the file saving should be skipped
-    // because of the file is already up to date.
-    if (saveChangesOnDisk)
-    {
-      kml::GroupIdCollection categoriesToSave;
-      for (auto groupId : m_bookmarksChangesTracker.GetUpdatedGroupIds())
-        if (IsBookmarkCategory(groupId) && GetBmCategory(groupId)->IsAutoSaveEnabled())
-          categoriesToSave.push_back(groupId);
-
-      SaveBookmarks(categoriesToSave);
-    }
+    kml::GroupIdCollection categoriesToSave;
+    for (auto groupId : m_pendingSaveGroups)
+      if (GetBmCategory(groupId)->IsAutoSaveEnabled())
+        categoriesToSave.push_back(groupId);
+    SaveBookmarks(categoriesToSave);
+    m_pendingSaveGroups.clear();
 
     SendBookmarksChanges(m_bookmarksChangesTracker);
   }
@@ -2649,6 +2651,7 @@ bool BookmarkManager::DeleteBmCategory(kml::MarkGroupId groupId, bool permanentl
       LOG(LERROR, ("Failed to move", filePath, "into the trash at", trashedFilePath));
   }
 
+  m_pendingSaveGroups.erase(groupId);
   m_categories.erase(it);
   UpdateBmGroupIdList();
   return true;
@@ -2774,6 +2777,8 @@ void BookmarkManager::CreateCategories(KMLDataCollection && dataCollection, bool
       groupId = CreateBookmarkCategory(std::move(categoryData), false /* autoSave */);
     loadedGroups.insert(groupId);
     auto * group = GetBmCategory(groupId);
+    // Loading replaces the group snapshot, including any pending local changes to it.
+    m_pendingSaveGroups.erase(groupId);
     group->SetFileName(fileName);
 
     for (auto & bmData : fileData.m_bookmarksData)

@@ -26,7 +26,9 @@
 #include "std/target_os.hpp"
 
 #include <utf8.h>  // utf8::is_valid
+#include <pugixml.hpp>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstring>  // strlen
@@ -2489,6 +2491,50 @@ UNIT_CLASS_TEST(AreasTestFixture, Bookmarks_BackupPreservesDistinctCategories)
     TEST(portableNames.contains("files/survey.one.kml"), ());
     TEST(portableNames.contains("files/survey.two.kml"), ());
     TEST_EQUAL(recovered, expected, ());
+    finished = true;
+  });
+  while (!finished)
+    RunNextGuiTask();
+}
+
+UNIT_CLASS_TEST(AreasTestFixture, Bookmarks_BackupEscapesIndexText)
+{
+  BookmarkManager manager(BM_CALLBACKS);
+  manager.EnableTestMode(true);
+  BookmarkManager::KMLDataCollection collection;
+  for (std::string const & name : {"Survey & notes", "Survey & samples"})
+  {
+    auto data = std::make_unique<kml::FileData>();
+    kml::SetDefaultStr(data->m_categoryData.m_name, name);
+    data->m_categoryData.m_lastModified = kml::TimestampClock::from_time_t(1000);
+    data->m_bookmarksData.emplace_back().m_point = {0, 0};
+    collection.emplace_back(name + ".kml", std::move(data));
+  }
+  manager.CreateCategories(std::move(collection));
+  bool finished = false;
+  manager.PrepareAllFilesForSharing([&](BookmarkManager::SharingResult const & result)
+  {
+    TEST(result.m_code == BookmarkManager::SharingResult::Code::Success, (result.m_errorString));
+    SCOPE_GUARD(deleteArchive, [&] { base::DeleteFileX(result.m_sharingPath); });
+    auto reader = ZipFileReader::CreateModelReader(result.m_sharingPath, "doc.kml");
+    std::string content;
+    reader->ReadAsString(content);
+    TEST(LoadKmlData(MemReader(content.data(), content.size()), FileType::Kml) != nullptr, (content));
+    pugi::xml_document index;
+    auto const parsed = index.load_string(content.c_str());
+    TEST(parsed, (parsed.description(), content));
+    ZipFileReader::FileList files;
+    ZipFileReader::FilesList(result.m_sharingPath, files);
+    std::set<std::string> linkedFiles;
+    for (auto const & link : index.child("kml").child("Document").children("NetworkLink"))
+    {
+      std::string const href = link.child("Link").child("href").text().as_string();
+      TEST(href.find('&') != std::string::npos, (href));
+      TEST_EQUAL(link.child("name").text().as_string(), base::GetNameFromFullPathWithoutExt(href), ());
+      TEST(linkedFiles.insert(href).second, (href));
+      TEST(std::any_of(files.begin(), files.end(), [&](auto const & file) { return file.first == href; }), (href));
+    }
+    TEST_EQUAL(linkedFiles.size(), 2, (content));
     finished = true;
   });
   while (!finished)

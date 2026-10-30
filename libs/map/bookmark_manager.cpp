@@ -11,6 +11,8 @@
 #include "drape_frontend/selection_shape.hpp"
 #include "drape_frontend/visual_params.hpp"
 
+#include "kml/serdes_common.hpp"
+
 #include "platform/localization.hpp"
 #include "platform/platform.hpp"
 #include "platform/preferred_languages.hpp"
@@ -153,9 +155,9 @@ std::string BuildIndexFile(std::vector<std::string> const & filesForIndex)
   for (auto const & fileName : filesForIndex)
   {
     content.append("<NetworkLink><name>");
-    content.append(base::GetNameFromFullPathWithoutExt(fileName));
+    content.append(kml::EscapeXml(base::GetNameFromFullPathWithoutExt(fileName)));
     content.append("</name><Link><href>");
-    content.append(fileName);
+    content.append(kml::EscapeXml(fileName));
     content.append("</href></Link></NetworkLink>\n");
   }
   content.append(

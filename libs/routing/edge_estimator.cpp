@@ -305,7 +305,7 @@ public:
     if (purpose == Purpose::Weight)
       weight *= GetTransitWalkWeightFactor();
 
-    return ApplyStrategy(purpose, weight, distanceM);
+    return ApplyStrategy(purpose, weight, distanceM, segment);
   }
 
 private:
@@ -371,7 +371,7 @@ public:
       return std::min(speedMpS, GetMaxWeightSpeedMpS());
     });
 
-    return ApplyStrategy(purpose, weight, distanceM);
+    return ApplyStrategy(purpose, weight, distanceM, segment);
   }
 
 private:
@@ -460,7 +460,7 @@ double CarEstimator::CalcSegmentWeight(Segment const & segment, RoadGeometry con
     }
   }
 
-  return ApplyStrategy(purpose, result, distanceM);
+  return ApplyStrategy(purpose, result, distanceM, segment);
 }
 
 // EdgeEstimator -----------------------------------------------------------------------------------

@@ -76,6 +76,7 @@ public class SettingsPrefsFragment extends BaseXmlSettingsFragment implements La
     initScreenSleepEnabledPrefsCallbacks();
     initShowOnLockScreenPrefsCallbacks();
     initNightNavigationPrefsCallbacks();
+    initCustomRoutesPrefsCallbacks();
   }
 
   private void updateVoiceInstructionsPrefsSummary()
@@ -624,6 +625,36 @@ public class SettingsPrefsFragment extends BaseXmlSettingsFragment implements La
     final PreferenceCategory category = getPreference(categoryKey);
 
     category.removePreference(preference);
+  }
+
+  private void initCustomRoutesPrefsCallbacks()
+  {
+    String[] keys = {
+      "pref_main_route_color",
+      "pref_routes_alpha",
+      "pref_std_routes_count",
+      "pref_std_route_color",
+      "pref_deep_routes_count",
+      "pref_deep_route_color",
+      "pref_deep_routes_max_eta"
+    };
+    for (String key : keys)
+    {
+      ListPreference pref = findPreference(key);
+      if (pref != null)
+      {
+        String cur = Config.getString(key, pref.getValue());
+        if (cur != null && !cur.isEmpty())
+          pref.setValue(cur);
+        else if (pref.getValue() != null)
+          Config.setString(key, pref.getValue());
+
+        pref.setOnPreferenceChangeListener((preference, newValue) -> {
+          Config.setString(key, String.valueOf(newValue));
+          return true;
+        });
+      }
+    }
   }
 
   @Override

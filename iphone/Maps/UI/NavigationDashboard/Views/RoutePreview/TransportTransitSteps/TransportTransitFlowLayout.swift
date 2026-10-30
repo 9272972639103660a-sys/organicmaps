@@ -4,7 +4,6 @@ final class TransportTransitFlowLayout: UICollectionViewLayout {
     static let separator = TransportTransitSeparator.self
     static let separatorKind = toString(separator)
     static let separatorSize = CGSize(width: 16, height: 20)
-    static let minimumCellWidthAfterShrink = CGFloat(56)
   }
 
   private var cellsLayoutAttrs = [UICollectionViewLayoutAttributes]()
@@ -53,30 +52,62 @@ final class TransportTransitFlowLayout: UICollectionViewLayout {
     }
   }
 
-  static func frames(cellSizes: [CGSize], width: CGFloat) -> (cells: [CGRect], separators: [CGRect]) {
-    var cells = [CGRect]()
-    var separators = [CGRect]()
-    var x = CGFloat(0)
-    var y = CGFloat(0)
+  struct Cursor {
+    private let width: CGFloat
+    private var x: CGFloat = 0
+    private var y: CGFloat = 0
+    private var isFirst = true
 
-    for (item, size) in cellSizes.enumerated() {
-      if item != 0 {
-        separators.append(CGRect(origin: CGPoint(x: x, y: y), size: Config.separatorSize))
+    init(width: CGFloat) {
+      self.width = width
+    }
+
+    var remainingWidth: CGFloat {
+      let separatorWidth = isFirst ? 0 : Config.separatorSize.width
+      if x + separatorWidth > width {
+        return max(0, width - separatorWidth)
+      }
+      return max(0, width - x - separatorWidth)
+    }
+
+    mutating func append(size: CGSize, hasFollowingStep: Bool) -> (cell: CGRect, separator: CGRect?) {
+      var separator: CGRect?
+      if !isFirst {
+        if x + Config.separatorSize.width > width {
+          x = 0
+          y += Config.separatorSize.height + Config.lineSpacing
+        }
+        separator = CGRect(origin: CGPoint(x: x, y: y), size: Config.separatorSize)
         x += Config.separatorSize.width
       }
 
       var cellSize = size
-      // Reserve room for the separator drawn before the next step.
-      let availableWidth = width - (item + 1 < cellSizes.count ? Config.separatorSize.width : 0)
-      let minimumSpaceRequired = min(cellSize.width, Config.minimumCellWidthAfterShrink)
-      if availableWidth - x < minimumSpaceRequired {
+      cellSize.width = min(cellSize.width, max(0, width))
+      // An identifier that needs the full row moves its following arrow to the next row.
+      let canReserveSeparator = hasFollowingStep && cellSize.width + Config.separatorSize.width <= width
+      let availableWidth = max(0, width - (canReserveSeparator ? Config.separatorSize.width : 0))
+      if x > 0, x + cellSize.width > availableWidth {
         x = 0
         y += Config.separatorSize.height + Config.lineSpacing
       }
-      cellSize.width = min(cellSize.width, max(0, availableWidth - x))
 
-      cells.append(CGRect(origin: CGPoint(x: x, y: y), size: cellSize))
+      let cell = CGRect(origin: CGPoint(x: x, y: y), size: cellSize)
       x += cellSize.width
+      isFirst = false
+      return (cell, separator)
+    }
+  }
+
+  static func frames(cellSizes: [CGSize], width: CGFloat) -> (cells: [CGRect], separators: [CGRect]) {
+    var cells = [CGRect]()
+    var separators = [CGRect]()
+    var cursor = Cursor(width: width)
+    for (item, size) in cellSizes.enumerated() {
+      let frames = cursor.append(size: size, hasFollowingStep: item + 1 < cellSizes.count)
+      cells.append(frames.cell)
+      if let separator = frames.separator {
+        separators.append(separator)
+      }
     }
     return (cells, separators)
   }

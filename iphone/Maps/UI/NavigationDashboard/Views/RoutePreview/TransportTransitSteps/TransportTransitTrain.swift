@@ -27,9 +27,47 @@ final class TransportTransitTrain: TransportTransitCell {
   @IBOutlet private var emptyNumberTrailingOffset: NSLayoutConstraint!
 
   override class func estimatedCellSize(step: MWMRouterTransitStepInfo) -> CGSize {
-    let defaultSize = super.estimatedCellSize(step: step)
-    let labelSize = step.number.size(width: CGFloat.greatestFiniteMagnitude, font: Config.labelTextFont, maxNumberOfLines: 1)
+    estimatedCellSize(number: step.number)
+  }
+
+  private static func estimatedCellSize(number: String) -> CGSize {
+    let defaultSize = TransportTransitCell.Config.cellSize
+    let labelSize = number.size(width: CGFloat.greatestFiniteMagnitude, font: Config.labelTextFont, maxNumberOfLines: 1)
     return CGSize(width: defaultSize.width + labelSize.width + Config.labelTrailing, height: defaultSize.height)
+  }
+
+  static func numberGroups(_ number: String, maximumWidth: CGFloat, firstRowWidth: CGFloat,
+                           hasFollowingStep: Bool) -> [String] {
+    var remaining = ArraySlice(number.components(separatedBy: ", "))
+    var groups = [String]()
+    let separatorWidth = TransportTransitFlowLayout.Config.separatorSize.width
+    var rowWidth = firstRowWidth
+
+    while !remaining.isEmpty {
+      let remainder = remaining.joined(separator: ", ")
+      let availableWidth = rowWidth - (hasFollowingStep ? separatorWidth : 0)
+      if estimatedCellSize(number: remainder).width <= availableWidth {
+        groups.append(remainder)
+        break
+      }
+
+      if rowWidth < maximumWidth,
+         estimatedCellSize(number: remaining.first!).width > rowWidth - separatorWidth {
+        rowWidth = maximumWidth
+        continue
+      }
+
+      var current = remaining.removeFirst()
+      while let next = remaining.first {
+        let candidate = current + ", " + next
+        guard estimatedCellSize(number: candidate).width <= rowWidth - separatorWidth else { break }
+        current = candidate
+        remaining.removeFirst()
+      }
+      groups.append(current)
+      rowWidth = maximumWidth
+    }
+    return groups
   }
 
   override func config(step: MWMRouterTransitStepInfo) {

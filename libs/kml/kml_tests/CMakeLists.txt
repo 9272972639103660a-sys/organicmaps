@@ -10,6 +10,7 @@ set(SRC
   tests_data.hpp
   type_utils_tests.cpp
   xml_properties_tests.cpp
+  visibility_tests.cpp
   geojson_tests.cpp
 )
 
